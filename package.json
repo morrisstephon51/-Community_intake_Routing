@@ -1,0 +1,17 @@
+{
+  "name": "community-intake-routing",
+  "version": "1.0.0",
+  "description": "The Plug AI — community intake classifier and router",
+  "type": "module",
+  "main": "intake.js",
+  "scripts": {
+    "start": "node intake.js",
+    "test": "node intake.js --fixture learner && node intake.js --fixture partner && node intake.js --fixture volunteer"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
