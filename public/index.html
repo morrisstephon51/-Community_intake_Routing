@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Join The Plug AI Community</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0a0a0a;
+      color: #f0f0f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+    .card {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      max-width: 480px;
+      width: 100%;
+    }
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #a855f7;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.5px;
+    }
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      line-height: 1.2;
+    }
+    .sub {
+      color: #999;
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+    }
+    .field { margin-bottom: 1.25rem; }
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.4rem;
+    }
+    input, textarea, select {
+      width: 100%;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      color: #f0f0f0;
+      font-size: 0.95rem;
+      padding: 0.65rem 0.85rem;
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-text-fill-color: #f0f0f0;
+    }
+    input:focus, textarea:focus, select:focus { border-color: #a855f7; }
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+      font-family: inherit;
+    }
+    select option { background: #1a1a1a; }
+    button {
+      width: 100%;
+      background: #a855f7;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.85rem;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      margin-top: 0.5rem;
+    }
+    button:hover { background: #9333ea; }
+    button:active { transform: scale(0.99); }
+    button:disabled { background: #4a4a4a; cursor: not-allowed; }
+    .success {
+      display: none;
+      background: #0f2d1a;
+      border: 1px solid #16a34a;
+      border-radius: 8px;
+      padding: 1.25rem;
+      color: #4ade80;
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    .error-msg {
+      display: none;
+      color: #f87171;
+      font-size: 0.85rem;
+      margin-top: 0.75rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">The Plug AI</div>
+    <h1>Get Connected</h1>
+    <p class="sub">Tell us about yourself and we'll route you to the right next step.</p>
+
+    <form id="form">
+      <div class="field">
+        <label for="name">Full Name</label>
+        <input type="text" id="name" name="name" placeholder="Your name" required />
+      </div>
+      <div class="field">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" placeholder="you@example.com" required />
+      </div>
+      <div class="field">
+        <label for="zip">ZIP Code</label>
+        <input type="text" id="zip" name="zip" placeholder="e.g. 30301" maxlength="10" />
+      </div>
+      <div class="field">
+        <label for="how_heard">How did you hear about us?</label>
+        <select id="how_heard" name="how_heard">
+          <option value="">Select one</option>
+          <option value="Instagram">Instagram</option>
+          <option value="LinkedIn">LinkedIn</option>
+          <option value="TikTok">TikTok</option>
+          <option value="Word of mouth">Word of mouth</option>
+          <option value="Google">Google</option>
+          <option value="Event">Event</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="interest_description">Tell us about yourself</label>
+        <textarea
+          id="interest_description"
+          name="interest_description"
+          placeholder="What brings you here? Looking to learn, volunteer, partner, or something else?"
+          required
+        ></textarea>
+      </div>
+      <button type="submit" id="btn">Submit</button>
+      <div class="error-msg" id="error"></div>
+    </form>
+
+    <div class="success" id="success">
+      <strong>You're in!</strong><br />
+      We've received your info and will be in touch soon.
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('form');
+    const btn = document.getElementById('btn');
+    const success = document.getElementById('success');
+    const errEl = document.getElementById('error');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      btn.disabled = true;
+      btn.textContent = 'Submitting…';
+      errEl.style.display = 'none';
+
+      const payload = {
+        name: form.name.value.trim(),
+        email: form.email.value.trim(),
+        zip: form.zip.value.trim() || null,
+        how_heard: form.how_heard.value || null,
+        interest_description: form.interest_description.value.trim() || null,
+      };
+
+      try {
+        const res = await fetch('/api/intake', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || 'Something went wrong. Please try again.');
+        }
+        form.style.display = 'none';
+        success.style.display = 'block';
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Submit';
+      }
+    });
+  </script>
+</body>
+</html>
