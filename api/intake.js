@@ -63,20 +63,26 @@ export default async function handler(req, res) {
 
   const classification = classify(payload);
 
+  const record = {
+    ...payload,
+    classification: classification.label,
+    confidence: classification.confidence,
+    status: 'routed',
+  };
+
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
   if (supabaseUrl && supabaseKey) {
     try {
       const supabase = createClient(supabaseUrl, supabaseKey);
-      await supabase.from('community_intake').insert({
-        ...payload,
-        classification: classification.label,
-        confidence: classification.confidence,
-        status: 'routed',
-      });
+      await supabase.from('community_intake').insert(record);
     } catch (err) {
       console.error('Supabase insert failed:', err.message);
     }
+  } else {
+    // Supabase not configured yet — log to Vercel function logs so
+    // submissions are recoverable instead of silently discarded.
+    console.log('community_intake submission (no Supabase configured):', JSON.stringify(record));
   }
 
   return res.status(200).json({ success: true, classification: classification.label });
