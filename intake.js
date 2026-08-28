@@ -11,6 +11,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'fs';
 import { createInterface } from 'readline';
+import { fileURLToPath } from 'url';
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -70,6 +71,14 @@ const SIGNALS = {
   },
 };
 
+function matchesKeyword(text, kw) {
+  // Whole-word/phrase match, NOT a bare substring, so short keywords
+  // (fund, invest, serve, teach) don't collide with innocent longer words
+  // (fundamentals, investigate, deserve/reserve, teacher) and misroute intake.
+  const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`\\b${escaped}\\b`).test(text);
+}
+
 function classify(payload) {
   const text = [
     payload.interest_description || '',
@@ -80,7 +89,7 @@ function classify(payload) {
 
   for (const [label, { keywords, weight }] of Object.entries(SIGNALS)) {
     for (const kw of keywords) {
-      if (text.includes(kw)) {
+      if (matchesKeyword(text, kw)) {
         scores[label] += weight;
       }
     }
@@ -96,7 +105,7 @@ function classify(payload) {
   const confidence = total > 0 ? Math.min(topScore / total, 0.99) : 0.5;
 
   const matchedKeywords = topLabel !== 'learner'
-    ? SIGNALS[topLabel].keywords.filter(kw => text.includes(kw))
+    ? SIGNALS[topLabel].keywords.filter(kw => matchesKeyword(text, kw))
     : [];
 
   const reasoning = topLabel === 'learner'
@@ -292,7 +301,12 @@ async function main() {
   };
 }
 
-main().catch(err => {
-  console.error('\n✗ Fatal error:', err.message);
-  process.exit(1);
-});
+export { classify };
+
+const isMainModule = process.argv[1] && process.argv[1] === fileURLToPath(import.meta.url);
+if (isMainModule) {
+  main().catch(err => {
+    console.error('\n✗ Fatal error:', err.message);
+    process.exit(1);
+  });
+}

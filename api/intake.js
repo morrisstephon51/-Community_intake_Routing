@@ -18,13 +18,21 @@ const SIGNALS = {
   },
 };
 
+function matchesKeyword(text, kw) {
+  // Whole-word/phrase match, NOT a bare substring, so short keywords
+  // (fund, invest, serve, teach) don't collide with innocent longer words
+  // (fundamentals, investigate, deserve/reserve, teacher) and misroute intake.
+  const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`\\b${escaped}\\b`).test(text);
+}
+
 function classify(payload) {
   const text = [payload.interest_description || '', payload.how_heard || ''].join(' ').toLowerCase();
   const scores = { learner: 0.5, partner: 0, volunteer: 0 };
 
   for (const [label, { keywords }] of Object.entries(SIGNALS)) {
     for (const kw of keywords) {
-      if (text.includes(kw)) scores[label] += 1;
+      if (matchesKeyword(text, kw)) scores[label] += 1;
     }
   }
 
@@ -39,6 +47,8 @@ function classify(payload) {
 
   return { label: topLabel, confidence: parseFloat(confidence.toFixed(3)) };
 }
+
+export { classify };
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
