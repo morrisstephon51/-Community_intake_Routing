@@ -31,7 +31,12 @@ function classify(payload) {
   const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
   const [topLabel, topScore] = sorted[0];
   const total = Object.values(scores).reduce((a, b) => a + b, 0);
-  const confidence = Math.min(topScore / total, 0.99);
+  // A signal-less learner default carries no evidence: its 0.5 baseline is the
+  // only contribution to `total`, so topScore/total collapses to ~1.0 and would
+  // misreport a pure fallback as near-certain (0.99). Learner can only be top
+  // when no partner/volunteer keyword matched, so report a neutral 0.5 there and
+  // reserve the ratio for wins actually driven by matched keywords.
+  const confidence = topLabel === 'learner' ? 0.5 : Math.min(topScore / total, 0.99);
 
   if (confidence < 0.7 && topLabel !== 'learner') {
     return { label: 'learner', confidence: 0.65 };
