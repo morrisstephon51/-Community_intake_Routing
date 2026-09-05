@@ -71,10 +71,11 @@ const SIGNALS = {
 };
 
 function classify(payload) {
-  const text = [
-    payload.interest_description || '',
-    payload.how_heard || '',
-  ].join(' ').toLowerCase();
+  // Classify on the intent field only. `how_heard` is marketing-attribution
+  // metadata (e.g. "Instagram", "referral", "a brand partner referred me") —
+  // scoring it leaks the *source* into the *intent* and misroutes learners who
+  // heard about us through a partner/referral/company/agency. See issue #7.
+  const text = (payload.interest_description || '').toLowerCase();
 
   const scores = { learner: 0, partner: 0, volunteer: 0 };
 

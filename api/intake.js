@@ -19,7 +19,8 @@ const SIGNALS = {
 };
 
 function classify(payload) {
-  const text = [payload.interest_description || '', payload.how_heard || ''].join(' ').toLowerCase();
+  // Classify on the intent field only; how_heard is attribution metadata, not intent. See issue #7.
+  const text = (payload.interest_description || '').toLowerCase();
   const scores = { learner: 0.5, partner: 0, volunteer: 0 };
 
   for (const [label, { keywords }] of Object.entries(SIGNALS)) {
