@@ -93,7 +93,16 @@ function classify(payload) {
   const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
 
   const [topLabel, topScore] = sorted[0];
-  const confidence = total > 0 ? Math.min(topScore / total, 0.99) : 0.5;
+  // The learner 0.5 baseline is a tie-breaking prior, not evidence. Leaving it in
+  // the confidence denominator forces any single-keyword partner/volunteer
+  // (topScore 1.0 -> 1.0/1.5 = 0.667) below the 0.7 routing threshold, silently
+  // downgrading genuine one-line sponsor/partner/mentor inquiries to the learner
+  // waitlist. Score a real winner against matched signal evidence only; keep the
+  // full total for the learner default so its behavior is unchanged.
+  const evidence = scores.partner + scores.volunteer;
+  const confidence = topLabel === "learner"
+    ? (total > 0 ? Math.min(topScore / total, 0.99) : 0.5)
+    : Math.min(topScore / evidence, 0.99);
 
   const matchedKeywords = topLabel !== 'learner'
     ? SIGNALS[topLabel].keywords.filter(kw => text.includes(kw))
