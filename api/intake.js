@@ -18,20 +18,32 @@ const SIGNALS = {
   },
 };
 
+function matchesKeyword(text, kw) {
+  // Whole-word/phrase match, NOT a bare substring, so short keywords (fund,
+  // invest, serve, teach) don't collide with longer words (fundamentals,
+  // investigate, deserve, teacher) and misroute intake. See #3.
+  const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`\\b${escaped}\\b`).test(text);
+}
+
 function classify(payload) {
-  const text = [payload.interest_description || '', payload.how_heard || ''].join(' ').toLowerCase();
+  // Classify on the intent field only; how_heard is attribution metadata, not intent. See #7.
+  const text = (payload.interest_description || '').toLowerCase();
   const scores = { learner: 0.5, partner: 0, volunteer: 0 };
 
   for (const [label, { keywords }] of Object.entries(SIGNALS)) {
     for (const kw of keywords) {
-      if (text.includes(kw)) scores[label] += 1;
+      if (matchesKeyword(text, kw)) scores[label] += 1;
     }
   }
 
   const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
   const [topLabel, topScore] = sorted[0];
-  const total = Object.values(scores).reduce((a, b) => a + b, 0);
-  const confidence = Math.min(topScore / total, 0.99);
+  // #5 neutral learner default + #9 evidence-only denominator for real winners.
+  const evidence = scores.partner + scores.volunteer;
+  const confidence = topLabel === 'learner'
+    ? 0.5
+    : Math.min(topScore / evidence, 0.99);
 
   if (confidence < 0.7 && topLabel !== 'learner') {
     return { label: 'learner', confidence: 0.65 };
@@ -39,6 +51,8 @@ function classify(payload) {
 
   return { label: topLabel, confidence: parseFloat(confidence.toFixed(3)) };
 }
+
+export { classify };
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
