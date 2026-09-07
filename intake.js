@@ -11,6 +11,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'fs';
 import { createInterface } from 'readline';
+import { fileURLToPath } from 'url';
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -52,11 +53,19 @@ const FIXTURES = {
 
 const SIGNALS = {
   partner: {
+    // Partner keywords are partnership-INTENT signals — an offer or request to
+    // work together — NOT first-person affiliation nouns. `business`, `company`,
+    // `enterprise`, and `agency` only describe the inquirer's own context: a
+    // learner ("I want to learn AI for my small business and grow my skills") is
+    // not a partner. They were dropped because a single incidental affiliation
+    // noun cleared the 0.7 threshold under #9's evidence denominator and misrouted
+    // clear learners to the founder inbox (they then never got a welcome email).
+    // Genuine partners still match sponsor/collaborate/partner/refer/invest.
     keywords: [
-      'business', 'collaborate', 'collaboration', 'sponsor', 'sponsorship',
+      'collaborate', 'collaboration', 'sponsor', 'sponsorship',
       'organization', 'organisation', 'refer clients', 'referral', 'partner',
       'partnership', 'brand', 'b2b', 'corporate', 'investor', 'invest',
-      'fund', 'funding', 'enterprise', 'company', 'agency',
+      'fund', 'funding',
     ],
     weight: 1.0,
   },
@@ -70,17 +79,26 @@ const SIGNALS = {
   },
 };
 
+function matchesKeyword(text, kw) {
+  // Whole-word/phrase match, NOT a bare substring, so short keywords
+  // (fund, invest, serve, teach) don't collide with innocent longer words
+  // (fundamentals, investigate, deserve/reserve, teacher) and misroute intake. See #3.
+  const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`\\b${escaped}\\b`).test(text);
+}
+
 function classify(payload) {
-  const text = [
-    payload.interest_description || '',
-    payload.how_heard || '',
-  ].join(' ').toLowerCase();
+  // Classify on the intent field only. `how_heard` is marketing-attribution
+  // metadata (e.g. "Instagram", "a brand partner referred me") — scoring it leaks
+  // the *source* into the *intent* and misroutes learners who heard about us
+  // through a partner/referral/company/agency. See #7.
+  const text = (payload.interest_description || '').toLowerCase();
 
   const scores = { learner: 0, partner: 0, volunteer: 0 };
 
   for (const [label, { keywords, weight }] of Object.entries(SIGNALS)) {
     for (const kw of keywords) {
-      if (text.includes(kw)) {
+      if (matchesKeyword(text, kw)) {
         scores[label] += weight;
       }
     }
@@ -89,14 +107,26 @@ function classify(payload) {
   // Learner is the default; give it a baseline so it wins ties
   scores.learner += 0.5;
 
-  const total = Object.values(scores).reduce((a, b) => a + b, 0);
   const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
 
   const [topLabel, topScore] = sorted[0];
-  const confidence = total > 0 ? Math.min(topScore / total, 0.99) : 0.5;
+
+  // Confidence combines two fixes:
+  //  • #5 — a signal-less learner default carries no evidence; its 0.5 baseline
+  //    is the only contribution to a total-denominator, so a ratio collapses to
+  //    ~1.0 and would misreport a pure fallback as near-certain. Report a
+  //    neutral 0.5 for the learner default instead.
+  //  • #9 — a genuine partner/volunteer winner is scored against matched-signal
+  //    evidence only (partner + volunteer), NOT the learner tie-breaking prior,
+  //    so a real single-keyword inquiry clears the 0.7 routing threshold instead
+  //    of being silently downgraded to the learner waitlist.
+  const evidence = scores.partner + scores.volunteer;
+  const confidence = topLabel === 'learner'
+    ? 0.5
+    : Math.min(topScore / evidence, 0.99);
 
   const matchedKeywords = topLabel !== 'learner'
-    ? SIGNALS[topLabel].keywords.filter(kw => text.includes(kw))
+    ? SIGNALS[topLabel].keywords.filter(kw => matchesKeyword(text, kw))
     : [];
 
   const reasoning = topLabel === 'learner'
@@ -292,7 +322,12 @@ async function main() {
   };
 }
 
-main().catch(err => {
-  console.error('\n✗ Fatal error:', err.message);
-  process.exit(1);
-});
+export { classify };
+
+const isMainModule = process.argv[1] && process.argv[1] === fileURLToPath(import.meta.url);
+if (isMainModule) {
+  main().catch(err => {
+    console.error('\n✗ Fatal error:', err.message);
+    process.exit(1);
+  });
+}
