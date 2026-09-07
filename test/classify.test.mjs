@@ -47,6 +47,15 @@ for (const [impl, classify] of [['cli', classifyCli], ['api', classifyApi]]) {
   // Regression guard: strong multi-keyword partner still classifies confidently.
   const strong = classify({ interest_description: 'Our organization wants to collaborate and sponsor events', how_heard: '' });
   check('multi-keyword partner still routes partner', strong.label === 'partner', `got ${strong.label}`);
+
+  // #9 follow-up — an affiliation noun ("business"/"company") describes the
+  // inquirer's context, not partnership intent. A clear learner who owns one
+  // must NOT be misrouted to the founder inbox (they would never get a welcome
+  // email). This was the documented regression from #9's evidence denominator.
+  const bizLearner = classify({ interest_description: 'I want to learn how to use AI for my small business and grow my skills.', how_heard: 'Instagram' });
+  check('affiliation noun "business" does NOT misroute a clear learner', bizLearner.label === 'learner', `got ${bizLearner.label}`);
+  const companyLearner = classify({ interest_description: 'Hoping to learn how to use AI at my company', how_heard: '' });
+  check('affiliation noun "company" does NOT misroute a learner', companyLearner.label === 'learner', `got ${companyLearner.label}`);
 }
 
 console.log(`\n${pass}/${pass + fail} passed`);

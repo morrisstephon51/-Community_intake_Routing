@@ -53,11 +53,19 @@ const FIXTURES = {
 
 const SIGNALS = {
   partner: {
+    // Partner keywords are partnership-INTENT signals — an offer or request to
+    // work together — NOT first-person affiliation nouns. `business`, `company`,
+    // `enterprise`, and `agency` only describe the inquirer's own context: a
+    // learner ("I want to learn AI for my small business and grow my skills") is
+    // not a partner. They were dropped because a single incidental affiliation
+    // noun cleared the 0.7 threshold under #9's evidence denominator and misrouted
+    // clear learners to the founder inbox (they then never got a welcome email).
+    // Genuine partners still match sponsor/collaborate/partner/refer/invest.
     keywords: [
-      'business', 'collaborate', 'collaboration', 'sponsor', 'sponsorship',
+      'collaborate', 'collaboration', 'sponsor', 'sponsorship',
       'organization', 'organisation', 'refer clients', 'referral', 'partner',
       'partnership', 'brand', 'b2b', 'corporate', 'investor', 'invest',
-      'fund', 'funding', 'enterprise', 'company', 'agency',
+      'fund', 'funding',
     ],
     weight: 1.0,
   },
