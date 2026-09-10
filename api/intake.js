@@ -51,11 +51,27 @@ function classify(payload) {
     ? 0.5
     : Math.min(topScore / evidence, 0.99);
 
+  // #12 — return `reasoning` too, in lockstep with intake.js. Both copies write
+  // to the same community_intake.reasoning column, so the return shapes must
+  // match or the web path silently drops the classification rationale for every
+  // real submission (the CLI/test paths are the only ones that carried it).
+  const matchedKeywords = topLabel !== 'learner'
+    ? SIGNALS[topLabel].keywords.filter(kw => matchesKeyword(text, kw))
+    : [];
+
+  const reasoning = topLabel === 'learner'
+    ? `No strong partner or volunteer signals found. Defaulting to learner (confidence: ${confidence.toFixed(2)}).`
+    : `Matched ${topLabel} keywords: [${matchedKeywords.join(', ')}]. Confidence: ${confidence.toFixed(2)}.`;
+
   if (confidence < 0.7 && topLabel !== 'learner') {
-    return { label: 'learner', confidence: 0.65 };
+    return {
+      label: 'learner',
+      confidence: 0.65,
+      reasoning: `Confidence ${confidence.toFixed(2)} below 0.7 threshold. Defaulting to learner. Original signals: ${reasoning}`,
+    };
   }
 
-  return { label: topLabel, confidence: parseFloat(confidence.toFixed(3)) };
+  return { label: topLabel, confidence: parseFloat(confidence.toFixed(3)), reasoning };
 }
 
 export { classify };
@@ -83,10 +99,14 @@ export default async function handler(req, res) {
 
   const classification = classify(payload);
 
+  // #12 — write the SAME column set as the CLI path (intake.js logToSupabase),
+  // including `reasoning`. Previously the web path omitted it, so the founder
+  // lost the classification rationale for exactly the real inquiries.
   const record = {
     ...payload,
     classification: classification.label,
     confidence: classification.confidence,
+    reasoning: classification.reasoning,
     status: 'routed',
   };
 
@@ -95,9 +115,19 @@ export default async function handler(req, res) {
   if (supabaseUrl && supabaseKey) {
     try {
       const supabase = createClient(supabaseUrl, supabaseKey);
-      await supabase.from('community_intake').insert(record);
+      // supabase-js returns a Postgres error as { error } instead of throwing,
+      // so the old try/catch alone never saw constraint violations — a failed
+      // insert was silently dropped with no trace. Capture and check `error`
+      // (like intake.js does) and log the full record either way so a real
+      // submission is always recoverable. See #12.
+      const { error } = await supabase.from('community_intake').insert(record);
+      if (error) {
+        console.error('Supabase insert failed:', error.message);
+        console.log('community_intake submission (insert failed, recoverable):', JSON.stringify(record));
+      }
     } catch (err) {
-      console.error('Supabase insert failed:', err.message);
+      console.error('Supabase insert threw:', err.message);
+      console.log('community_intake submission (insert threw, recoverable):', JSON.stringify(record));
     }
   } else {
     // Supabase not configured yet — log to Vercel function logs so
