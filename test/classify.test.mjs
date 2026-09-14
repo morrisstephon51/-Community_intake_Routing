@@ -4,6 +4,7 @@
 //   #7 how_heard attribution pollutes intent scoring → intent field only
 //   #9 single-keyword partner/volunteer downgraded to learner → evidence denominator
 //   #12 web path drops `reasoning` → return-shape parity between the two copies
+//   #14 affiliation nouns brand/corporate misroute learners → dropped from partner keywords
 // Runs the SAME cases against both the CLI module (intake.js) and the API
 // handler module (api/intake.js) so the two copies of classify() cannot drift.
 
@@ -57,6 +58,19 @@ for (const [impl, classify] of [['cli', classifyCli], ['api', classifyApi]]) {
   check('affiliation noun "business" does NOT misroute a clear learner', bizLearner.label === 'learner', `got ${bizLearner.label}`);
   const companyLearner = classify({ interest_description: 'Hoping to learn how to use AI at my company', how_heard: '' });
   check('affiliation noun "company" does NOT misroute a learner', companyLearner.label === 'learner', `got ${companyLearner.label}`);
+
+  // #14 — `brand` and `corporate` are affiliation/context nouns, not partnership
+  // intent — the same class as the `business`/`company`/`enterprise`/`agency`
+  // that #9 removed, but left behind in the keyword list. A learner growing a
+  // personal brand or holding a corporate job must NOT be misrouted to the
+  // founder inbox (the learner path is the only one that emits a welcome email).
+  const brandLearner = classify({ interest_description: 'I want to learn AI to grow my personal brand', how_heard: '' });
+  check('#14 "personal brand" does NOT misroute a learner to partner', brandLearner.label === 'learner', `got ${brandLearner.label}`);
+  const corpLearner = classify({ interest_description: 'I have a corporate job and I want to learn AI', how_heard: '' });
+  check('#14 "corporate job" does NOT misroute a learner to partner', corpLearner.label === 'learner', `got ${corpLearner.label}`);
+  // ...but a genuine partner who merely mentions a brand still routes on real intent verbs.
+  const brandPartner = classify({ interest_description: 'Our brand would love to collaborate and sponsor your events', how_heard: '' });
+  check('#14 real partner intent ("collaborate"/"sponsor") still routes partner', brandPartner.label === 'partner', `got ${brandPartner.label}`);
 
   // #12 — every classify() return must carry a non-empty `reasoning` string.
   // The web copy previously returned only { label, confidence }, so it wrote
