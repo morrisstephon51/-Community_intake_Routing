@@ -5,6 +5,9 @@
 //   #9 single-keyword partner/volunteer downgraded to learner → evidence denominator
 //   #12 web path drops `reasoning` → return-shape parity between the two copies
 //   #14 affiliation nouns brand/corporate misroute learners → dropped from partner keywords
+//   #16 affiliation nouns organization/organisation misroute learners → dropped
+//   #18 discovery-context noun referral misroutes learners → dropped (refer clients kept)
+//   #20 financial-context nouns invest/investor/fund/funding misroute learners → dropped
 // Runs the SAME cases against both the CLI module (intake.js) and the API
 // handler module (api/intake.js) so the two copies of classify() cannot drift.
 
@@ -101,7 +104,23 @@ for (const [impl, classify] of [['cli', classifyCli], ['api', classifyApi]]) {
   const referClientsPartner = classify({ interest_description: 'We refer clients to community programs and would love to partner and collaborate', how_heard: '' });
   check('#18 real partner intent ("refer clients" + "collaborate") still routes partner', referClientsPartner.label === 'partner', `got ${referClientsPartner.label}`);
 
-    // #12 — every classify() return must carry a non-empty `reasoning` string.
+  // #20 — `invest`, `investor`, `fund`, `funding` are financial-context nouns,
+  // not partnership-intent signals. For The Plug AI's faith-community /
+  // community-org audience, "invest in my education" or "seeking funding for
+  // AI training" is learner language. A single bare hit cleared the 0.7
+  // threshold and misrouted those learners to the founder inbox (no welcome
+  // email). Genuine partners still match sponsor/sponsorship/collaborate/partner.
+  const investLearner = classify({ interest_description: 'I want to invest in my AI education and grow my skills', how_heard: '' });
+  check('#20 "invest in my AI education" does NOT misroute a learner to partner', investLearner.label === 'learner', `got ${investLearner.label}`);
+  const fundingLearner = classify({ interest_description: 'Our congregation is seeking funding for AI training programs and wants to learn', how_heard: '' });
+  check('#20 "seeking funding for AI training" does NOT misroute a learner to partner', fundingLearner.label === 'learner', `got ${fundingLearner.label}`);
+  const investorLearner = classify({ interest_description: "I'm not an investor, I'm just here to learn AI basics", how_heard: '' });
+  check('#20 "not an investor" phrasing does NOT misroute a learner to partner', investorLearner.label === 'learner', `got ${investorLearner.label}`);
+  // ...but a genuine partner using real intent verbs still routes partner.
+  const investSponsorPartner = classify({ interest_description: 'We would like to sponsor your program and collaborate on community events', how_heard: '' });
+  check('#20 real partner intent ("sponsor"/"collaborate") still routes partner', investSponsorPartner.label === 'partner', `got ${investSponsorPartner.label}`);
+
+  // #12 — every classify() return must carry a non-empty `reasoning` string.
   // The web copy previously returned only { label, confidence }, so it wrote
   // NULL reasoning to community_intake for every real submission.
   check('#12 reasoning present on a routed result', typeof sponsor.reasoning === 'string' && sponsor.reasoning.length > 0, `got ${JSON.stringify(sponsor.reasoning)}`);
