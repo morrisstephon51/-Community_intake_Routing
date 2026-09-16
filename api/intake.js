@@ -3,15 +3,16 @@ import { createClient } from '@supabase/supabase-js';
 const SIGNALS = {
   partner: {
     // Partnership-INTENT signals only, NOT first-person affiliation/context nouns.
-    // `business`/`company`/`enterprise`/`agency` (dropped in #9) and now `brand`
-    // and `corporate` (#14) merely describe the inquirer's context ("grow my
-    // personal brand", "a corporate job") and cleared 0.7 on a single incidental
-    // match, misrouting clear learners to the founder inbox with no welcome
-    // email. Genuine partners still match sponsor/collaborate/partner/refer/
-    // invest. Kept in lockstep with intake.js.
+    // `business`/`company`/`enterprise`/`agency` (dropped in #9), `brand`/
+    // `corporate` (#14), and now `organization`/`organisation` (#16) merely
+    // describe the inquirer's context ("our community organization wants to learn
+    // AI") and cleared 0.7 on a single incidental match, misrouting clear
+    // learners — especially faith-community and community-org members — to the
+    // founder inbox with no welcome email. Genuine partners still match
+    // sponsor/collaborate/partner/refer/invest. Kept in lockstep with intake.js.
     keywords: [
       'collaborate', 'collaboration', 'sponsor', 'sponsorship',
-      'organization', 'organisation', 'refer clients', 'referral', 'partner',
+      'refer clients', 'referral', 'partner',
       'partnership', 'b2b', 'investor', 'invest',
       'fund', 'funding',
     ],

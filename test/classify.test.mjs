@@ -72,6 +72,20 @@ for (const [impl, classify] of [['cli', classifyCli], ['api', classifyApi]]) {
   const brandPartner = classify({ interest_description: 'Our brand would love to collaborate and sponsor your events', how_heard: '' });
   check('#14 real partner intent ("collaborate"/"sponsor") still routes partner', brandPartner.label === 'partner', `got ${brandPartner.label}`);
 
+  // #16 — `organization` / `organisation` are affiliation/context nouns, same
+  // class as #9 (business/company/enterprise/agency) and #14 (brand/corporate).
+  // Faith-community and community-org members routinely self-describe via "our
+  // organization" and were being misrouted to the founder inbox (no welcome email).
+  const orgLearner = classify({ interest_description: "I'm with a community organization and want to learn AI for my nonprofit", how_heard: '' });
+  check('#16 "community organization" does NOT misroute a learner to partner', orgLearner.label === 'learner', `got ${orgLearner.label}`);
+  const faithLearner = classify({ interest_description: 'Our faith organization wants to bring AI skills to our members', how_heard: '' });
+  check('#16 "faith organization" does NOT misroute a learner to partner', faithLearner.label === 'learner', `got ${faithLearner.label}`);
+  const orgSpellingLearner = classify({ interest_description: 'I run a small community organisation and want to learn AI', how_heard: '' });
+  check('#16 "community organisation" (UK spelling) does NOT misroute a learner', orgSpellingLearner.label === 'learner', `got ${orgSpellingLearner.label}`);
+  // ...but a genuine partner who mentions an org still routes on real intent verbs.
+  const orgPartner = classify({ interest_description: 'Our organization would love to collaborate and sponsor community events', how_heard: '' });
+  check('#16 real partner intent ("collaborate"/"sponsor") still routes partner when org present', orgPartner.label === 'partner', `got ${orgPartner.label}`);
+
   // #12 — every classify() return must carry a non-empty `reasoning` string.
   // The web copy previously returned only { label, confidence }, so it wrote
   // NULL reasoning to community_intake for every real submission.
