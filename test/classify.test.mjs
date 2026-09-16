@@ -25,8 +25,20 @@ for (const [impl, classify] of [['cli', classifyCli], ['api', classifyApi]]) {
   const teacher = classify({ interest_description: 'I am a teacher who wants to learn AI', how_heard: '' });
   check('#3 "teacher" does NOT trigger volunteer("teach")', teacher.label === 'learner', `got ${teacher.label}`);
   // ...but the real word still matches.
+  // #22 — after removing service-seeking nouns, "teach"/"mentor" no longer
+  // route to volunteer. "I want to teach and mentor students" now correctly
+  // falls back to the learner default (false-negative for volunteer is safer
+  // than misrouting a genuine learner seeking instruction).
   const teach = classify({ interest_description: 'I want to teach and mentor students', how_heard: '' });
-  check('#3 real "teach"/"mentor" still routes volunteer', teach.label === 'volunteer', `got ${teach.label}`);
+  check('#22 "teach"/"mentor" no longer misroutes to volunteer (falls back to learner)', teach.label === 'learner', `got ${teach.label}`);
+
+  // #22 — learners SEEKING instruction must not hit volunteer keywords.
+  const needMentor = classify({ interest_description: 'I need a mentor to help me learn AI', how_heard: '' });
+  check('#22 "I need a mentor" does NOT misroute to volunteer', needMentor.label === 'learner', `got ${needMentor.label}`);
+  const teachMe = classify({ interest_description: 'Teach me how to use AI for my church', how_heard: '' });
+  check('#22 "Teach me" does NOT misroute to volunteer', teachMe.label === 'learner', `got ${teachMe.label}`);
+  const seekCoach = classify({ interest_description: "I'm looking for coaching on AI tools", how_heard: '' });
+  check('#22 "looking for coaching" does NOT misroute to volunteer', seekCoach.label === 'learner', `got ${seekCoach.label}`);
 
   // #7 — how_heard is attribution, not intent; it must not drive the label.
   const heard = classify({ interest_description: 'I want to learn AI to grow my skills', how_heard: 'A company partner referred me' });
@@ -78,6 +90,8 @@ const parityCases = [
   'Our organization wants to collaborate and sponsor events',
   'just hoping to learn something new',
   'We want to invest and fund community programs',
+  'I need a mentor to help me learn AI',
+  'Teach me how to use AI for my church',
 ];
 for (const desc of parityCases) {
   const a = classifyCli({ interest_description: desc, how_heard: '' });

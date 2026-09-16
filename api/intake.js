@@ -16,10 +16,13 @@ const SIGNALS = {
     ],
   },
   volunteer: {
+    // Same fix as intake.js #22: service-seeking nouns dropped from volunteer
+    // keywords so learners who write "I need a mentor" / "teach me AI" /
+    // "looking for coaching" are not misrouted to the volunteer form.
     keywords: [
-      'volunteer', 'volunteering', 'give back', 'contribute time', 'mentor',
-      'mentoring', 'mentorship', 'help out', 'community service', 'donate time',
-      'serve', 'support the community', 'teach', 'coach',
+      'volunteer', 'volunteering', 'give back', 'contribute time',
+      'help out', 'community service', 'donate time',
+      'serve', 'support the community',
     ],
   },
 };

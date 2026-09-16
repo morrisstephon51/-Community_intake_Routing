@@ -70,10 +70,16 @@ const SIGNALS = {
     weight: 1.0,
   },
   volunteer: {
+    // Service-seeking nouns (`mentor`, `mentoring`, `mentorship`, `teach`,
+    // `coach`) describe what a learner WANTS TO RECEIVE, not an offer to give
+    // time. "I need a mentor", "teach me AI", "looking for coaching" are clear
+    // learner intents -- matching them here misroutes those submitters to the
+    // volunteer form and they never get a welcome email. Dropped per #22;
+    // the remaining keywords are unambiguously offer-of-service signals.
     keywords: [
-      'volunteer', 'volunteering', 'give back', 'contribute time', 'mentor',
-      'mentoring', 'mentorship', 'help out', 'community service', 'donate time',
-      'serve', 'support the community', 'teach', 'coach',
+      'volunteer', 'volunteering', 'give back', 'contribute time',
+      'help out', 'community service', 'donate time',
+      'serve', 'support the community',
     ],
     weight: 1.0,
   },
