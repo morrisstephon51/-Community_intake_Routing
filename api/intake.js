@@ -4,19 +4,19 @@ const SIGNALS = {
   partner: {
     // Partnership-INTENT signals only, NOT first-person affiliation/context nouns.
     // `business`/`company`/`enterprise`/`agency` (dropped in #9), `brand`/
-    // `corporate` (#14), `organization`/`organisation` (#16), and now
-    // `referral` (#18) describe the inquirer's OWN context, not an offer to
-    // partner. `referral` in particular is a discovery-context noun — for The
-    // Plug AI's faith-community / community-health-worker audience, "I was
-    // referred by my caseworker" is learner language. A single `referral` hit
-    // cleared the 0.7 threshold and misrouted those learners to the founder inbox.
-    // The phrase `'refer clients'` is retained as a genuine partner signal.
+    // `corporate` (#14), `organization`/`organisation` (#16), `referral` (#18),
+    // and now `invest`/`investor`/`fund`/`funding` (#20) describe the inquirer's
+    // OWN context, not an offer to partner. Financial-context language like
+    // "invest in my AI education" or "our congregation seeks funding for training"
+    // is learner language for The Plug AI's faith-community / community-org
+    // audience. A single bare hit cleared the 0.7 threshold and misrouted those
+    // learners to the founder inbox with no welcome email. Genuine partners still
+    // match sponsor/sponsorship/collaborate/partner/refer clients.
     // Kept in lockstep with intake.js.
     keywords: [
       'collaborate', 'collaboration', 'sponsor', 'sponsorship',
       'refer clients', 'partner',
-      'partnership', 'b2b', 'investor', 'invest',
-      'fund', 'funding',
+      'partnership', 'b2b',
     ],
   },
   volunteer: {
@@ -29,9 +29,9 @@ const SIGNALS = {
 };
 
 function matchesKeyword(text, kw) {
-  // Whole-word/phrase match, NOT a bare substring, so short keywords (fund,
-  // invest, serve, teach) don't collide with longer words (fundamentals,
-  // investigate, deserve, teacher) and misroute intake. See #3.
+  // Whole-word/phrase match, NOT a bare substring, so short keywords
+  // (serve, teach) don't collide with longer words (deserve, teacher) and
+  // misroute intake. See #3.
   const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return new RegExp(`\\b${escaped}\\b`).test(text);
 }
