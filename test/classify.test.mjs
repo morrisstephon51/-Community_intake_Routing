@@ -86,7 +86,22 @@ for (const [impl, classify] of [['cli', classifyCli], ['api', classifyApi]]) {
   const orgPartner = classify({ interest_description: 'Our organization would love to collaborate and sponsor community events', how_heard: '' });
   check('#16 real partner intent ("collaborate"/"sponsor") still routes partner when org present', orgPartner.label === 'partner', `got ${orgPartner.label}`);
 
-  // #12 — every classify() return must carry a non-empty `reasoning` string.
+  // #18 — `referral` is a discovery-context noun, not a partnership-intent
+  // signal. For The Plug AI's faith-community / community-health-worker
+  // audience, mentioning "a referral from my church" or "my caseworker gave me
+  // a referral" is learner language. A single `referral` hit was enough to
+  // clear the 0.7 threshold and misroute those learners to the founder inbox
+  // (no welcome email). The phrase `'refer clients'` is retained as a genuine
+  // partner-intent signal.
+  const referralLearner = classify({ interest_description: 'I heard about The Plug AI through a referral from my church and I want to learn AI skills', how_heard: '' });
+  check('#18 discovery-context "referral from my church" does NOT misroute a learner', referralLearner.label === 'learner', `got ${referralLearner.label}`);
+  const caseWorkerReferral = classify({ interest_description: 'My caseworker gave me a referral to this program and I am hoping to learn', how_heard: '' });
+  check('#18 "caseworker gave me a referral" does NOT misroute a learner', caseWorkerReferral.label === 'learner', `got ${caseWorkerReferral.label}`);
+  // ...but the PHRASE "refer clients" still routes a genuine partner.
+  const referClientsPartner = classify({ interest_description: 'We refer clients to community programs and would love to partner and collaborate', how_heard: '' });
+  check('#18 real partner intent ("refer clients" + "collaborate") still routes partner', referClientsPartner.label === 'partner', `got ${referClientsPartner.label}`);
+
+    // #12 — every classify() return must carry a non-empty `reasoning` string.
   // The web copy previously returned only { label, confidence }, so it wrote
   // NULL reasoning to community_intake for every real submission.
   check('#12 reasoning present on a routed result', typeof sponsor.reasoning === 'string' && sponsor.reasoning.length > 0, `got ${JSON.stringify(sponsor.reasoning)}`);

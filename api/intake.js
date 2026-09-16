@@ -4,15 +4,17 @@ const SIGNALS = {
   partner: {
     // Partnership-INTENT signals only, NOT first-person affiliation/context nouns.
     // `business`/`company`/`enterprise`/`agency` (dropped in #9), `brand`/
-    // `corporate` (#14), and now `organization`/`organisation` (#16) merely
-    // describe the inquirer's context ("our community organization wants to learn
-    // AI") and cleared 0.7 on a single incidental match, misrouting clear
-    // learners — especially faith-community and community-org members — to the
-    // founder inbox with no welcome email. Genuine partners still match
-    // sponsor/collaborate/partner/refer/invest. Kept in lockstep with intake.js.
+    // `corporate` (#14), `organization`/`organisation` (#16), and now
+    // `referral` (#18) describe the inquirer's OWN context, not an offer to
+    // partner. `referral` in particular is a discovery-context noun — for The
+    // Plug AI's faith-community / community-health-worker audience, "I was
+    // referred by my caseworker" is learner language. A single `referral` hit
+    // cleared the 0.7 threshold and misrouted those learners to the founder inbox.
+    // The phrase `'refer clients'` is retained as a genuine partner signal.
+    // Kept in lockstep with intake.js.
     keywords: [
       'collaborate', 'collaboration', 'sponsor', 'sponsorship',
-      'refer clients', 'referral', 'partner',
+      'refer clients', 'partner',
       'partnership', 'b2b', 'investor', 'invest',
       'fund', 'funding',
     ],
