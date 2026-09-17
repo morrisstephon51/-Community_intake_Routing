@@ -16,13 +16,15 @@ const SIGNALS = {
     ],
   },
   volunteer: {
-    // Same fix as intake.js #22: service-seeking nouns dropped from volunteer
-    // keywords so learners who write "I need a mentor" / "teach me AI" /
-    // "looking for coaching" are not misrouted to the volunteer form.
+    // Same fix as intake.js #22 and #24: context-describing verbs/nouns dropped
+    // from volunteer keywords so professional learners are not misrouted to the
+    // volunteer form. `serve` is a professional context verb — healthcare workers,
+    // social workers, and educators say "I serve seniors / patients / my community"
+    // to describe their JOB, not an offer to volunteer at The Plug AI. See #24.
     keywords: [
       'volunteer', 'volunteering', 'give back', 'contribute time',
       'help out', 'community service', 'donate time',
-      'serve', 'support the community',
+      'support the community',
     ],
   },
 };
