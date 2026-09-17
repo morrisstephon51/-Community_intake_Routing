@@ -54,6 +54,18 @@ for (const [impl, classify] of [['cli', classifyCli], ['api', classifyApi]]) {
   const serveVolunteer = classify({ interest_description: 'I want to volunteer and serve the community', how_heard: '' });
   check('#24 genuine volunteer with "volunteer" keyword still routes volunteer', serveVolunteer.label === 'volunteer', `got ${serveVolunteer.label}`);
 
+  // #26 — motivational phrasal verb `help out` must not misroute learners
+  // who frame their learning goal as helping their congregation or community.
+  const helpOutCongregation = classify({ interest_description: 'I want to learn AI so I can help out my congregation', how_heard: '' });
+  check('#26 "help out my congregation" does NOT misroute to volunteer', helpOutCongregation.label === 'learner', `got ${helpOutCongregation.label}`);
+  const helpOutNeighbors = classify({ interest_description: 'AI tools can help out people in my neighborhood and I want to learn them', how_heard: '' });
+  check('#26 "help out people in my neighborhood" does NOT misroute to volunteer', helpOutNeighbors.label === 'learner', `got ${helpOutNeighbors.label}`);
+  const helpOutFamily = classify({ interest_description: "I'm hoping AI can help out my family and I want to be the one who brings those skills", how_heard: '' });
+  check('#26 "help out my family" (learner motivation) does NOT misroute to volunteer', helpOutFamily.label === 'learner', `got ${helpOutFamily.label}`);
+  // ...but a genuine volunteer with a clear `volunteer` keyword still routes correctly.
+  const helpOutVolunteer = classify({ interest_description: "I want to volunteer and help out The Plug AI in any way I can", how_heard: '' });
+  check('#26 genuine volunteer with "volunteer" keyword still routes volunteer', helpOutVolunteer.label === 'volunteer', `got ${helpOutVolunteer.label}`);
+
   // #7 — how_heard is attribution, not intent; it must not drive the label.
   const heard = classify({ interest_description: 'I want to learn AI to grow my skills', how_heard: 'A company partner referred me' });
   check('#7 how_heard "company partner" ignored → learner', heard.label === 'learner', `got ${heard.label}`);
