@@ -26,10 +26,12 @@ const SIGNALS = {
     //   #28 — `give back`: same class as #26. "I want to give back to my community"
     //          is a learning motivation. Genuine volunteers still match
     //          volunteer/volunteering/contribute time/donate time.
+    //   #30 — `support the community`: same class as #26/#28. Social workers,
+    //          educators, and faith leaders use this phrase to describe their role
+    //          or motivation — NOT an offer to volunteer.
     keywords: [
       'volunteer', 'volunteering', 'contribute time',
       'community service', 'donate time',
-      'support the community',
     ],
   },
 };

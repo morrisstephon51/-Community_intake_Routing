@@ -85,10 +85,14 @@ const SIGNALS = {
     //   #28 — `give back`: same class as #26. Learners say "I want to give back
     //          to my community" to describe their learning GOAL, not to offer
     //          to volunteer. Dropped for the same reason as `help out`.
+    //   #30 — `support the community`: same class as #26/#28. Social workers,
+    //          educators, and faith leaders say "I support the community" to
+    //          describe their professional role or learning motivation — NOT an
+    //          offer to volunteer. Genuine volunteers still match `volunteer`,
+    //          `volunteering`, `contribute time`, or `donate time`.
     keywords: [
       'volunteer', 'volunteering', 'contribute time',
       'community service', 'donate time',
-      'support the community',
     ],
     weight: 1.0,
   },
