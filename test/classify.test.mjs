@@ -7,6 +7,7 @@
 //   #22 service-seeking nouns misroute learners to volunteer inbox
 //   #24 professional-context verb `serve` misroutes job-describing learners to volunteer inbox
 //   #28 motivational phrase `give back` misroutes learners who describe their goal as giving back
+//   #30 motivational phrase `support the community` misroutes learners who describe their professional role or learning goal
 // Runs the SAME cases against both the CLI module (intake.js) and the API
 // handler module (api/intake.js) so the two copies of classify() cannot drift.
 
@@ -78,6 +79,18 @@ for (const [impl, classify] of [['cli', classifyCli], ['api', classifyApi]]) {
   // ...but a genuine volunteer with a clear `volunteer` keyword still routes correctly.
   const giveBackVolunteer = classify({ interest_description: "I want to volunteer at The Plug AI and give back to the mission", how_heard: '' });
   check('#28 genuine volunteer with "volunteer" keyword still routes volunteer', giveBackVolunteer.label === 'volunteer', `got ${giveBackVolunteer.label}`);
+
+  // #30 — motivational phrase `support the community` must not misroute learners
+  // who use it to describe their professional role or learning motivation.
+  const supportSocialWorker = classify({ interest_description: 'I want to learn AI so I can better support the community I work with as a social worker', how_heard: '' });
+  check('#30 "support the community" (social-work context) does NOT misroute to volunteer', supportSocialWorker.label === 'learner', `got ${supportSocialWorker.label}`);
+  const supportEducator = classify({ interest_description: 'I teach at a public school and want to support the community through better technology', how_heard: '' });
+  check('#30 "support the community" (educator context) does NOT misroute to volunteer', supportEducator.label === 'learner', `got ${supportEducator.label}`);
+  const supportFaithLeader = classify({ interest_description: "As a pastor, supporting the community is my calling — I want AI skills to do it better", how_heard: '' });
+  check('#30 "supporting the community" (faith-leader context) does NOT misroute to volunteer', supportFaithLeader.label === 'learner', `got ${supportFaithLeader.label}`);
+  // ...but a genuine volunteer with a clear `volunteer` keyword still routes correctly.
+  const supportVolunteer = classify({ interest_description: "I want to volunteer and support the community through The Plug AI", how_heard: '' });
+  check('#30 genuine volunteer with "volunteer" keyword still routes volunteer', supportVolunteer.label === 'volunteer', `got ${supportVolunteer.label}`);
 
   // #7 — how_heard is attribution, not intent; it must not drive the label.
   const heard = classify({ interest_description: 'I want to learn AI to grow my skills', how_heard: 'A company partner referred me' });
