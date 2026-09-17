@@ -22,9 +22,12 @@ const SIGNALS = {
     //   #24 — `serve`: professional-context verb (healthcare/social-work/educators).
     //   #26 — `help out`: motivational phrasal verb. "I want to learn AI so I can
     //          help out my congregation" is a learning motivation, not an offer to
-    //          volunteer. Genuine volunteers still match volunteer/give back/donate time.
+    //          volunteer.
+    //   #28 — `give back`: same class as #26. "I want to give back to my community"
+    //          is a learning motivation. Genuine volunteers still match
+    //          volunteer/volunteering/contribute time/donate time.
     keywords: [
-      'volunteer', 'volunteering', 'give back', 'contribute time',
+      'volunteer', 'volunteering', 'contribute time',
       'community service', 'donate time',
       'support the community',
     ],
