@@ -6,6 +6,7 @@
 //   #12 web path drops `reasoning` → return-shape parity between the two copies
 //   #22 service-seeking nouns misroute learners to volunteer inbox
 //   #24 professional-context verb `serve` misroutes job-describing learners to volunteer inbox
+//   #28 motivational phrase `give back` misroutes learners who describe their goal as giving back
 // Runs the SAME cases against both the CLI module (intake.js) and the API
 // handler module (api/intake.js) so the two copies of classify() cannot drift.
 
@@ -66,6 +67,18 @@ for (const [impl, classify] of [['cli', classifyCli], ['api', classifyApi]]) {
   const helpOutVolunteer = classify({ interest_description: "I want to volunteer and help out The Plug AI in any way I can", how_heard: '' });
   check('#26 genuine volunteer with "volunteer" keyword still routes volunteer', helpOutVolunteer.label === 'volunteer', `got ${helpOutVolunteer.label}`);
 
+  // #28 — motivational phrasal verb `give back` must not misroute learners who
+  // describe their learning goal as giving back to their community.
+  const giveBackCommunity = classify({ interest_description: 'I want to learn AI so I can give back to my community', how_heard: '' });
+  check('#28 "give back to my community" does NOT misroute to volunteer', giveBackCommunity.label === 'learner', `got ${giveBackCommunity.label}`);
+  const giveBackChurch = classify({ interest_description: "I've always wanted to give back to my church and learning AI feels like the way", how_heard: '' });
+  check('#28 "give back to my church" does NOT misroute to volunteer', giveBackChurch.label === 'learner', `got ${giveBackChurch.label}`);
+  const giveBackFamily = classify({ interest_description: "Learning AI is my way of giving back to my family who sacrificed so much for me", how_heard: '' });
+  check('#28 "giving back to my family" (learner motivation) does NOT misroute to volunteer', giveBackFamily.label === 'learner', `got ${giveBackFamily.label}`);
+  // ...but a genuine volunteer with a clear `volunteer` keyword still routes correctly.
+  const giveBackVolunteer = classify({ interest_description: "I want to volunteer at The Plug AI and give back to the mission", how_heard: '' });
+  check('#28 genuine volunteer with "volunteer" keyword still routes volunteer', giveBackVolunteer.label === 'volunteer', `got ${giveBackVolunteer.label}`);
+
   // #7 — how_heard is attribution, not intent; it must not drive the label.
   const heard = classify({ interest_description: 'I want to learn AI to grow my skills', how_heard: 'A company partner referred me' });
   check('#7 how_heard "company partner" ignored → learner', heard.label === 'learner', `got ${heard.label}`);
@@ -119,6 +132,7 @@ const parityCases = [
   'I need a mentor to help me learn AI',
   'Teach me how to use AI for my church',
   'I serve seniors at a nursing home and want AI tools',
+  'I want to learn AI so I can give back to my community',
 ];
 for (const desc of parityCases) {
   const a = classifyCli({ interest_description: desc, how_heard: '' });
