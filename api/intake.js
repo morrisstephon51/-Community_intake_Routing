@@ -16,14 +16,16 @@ const SIGNALS = {
     ],
   },
   volunteer: {
-    // Same fix as intake.js #22 and #24: context-describing verbs/nouns dropped
+    // Same fix as intake.js #22/#24/#26: context-describing verbs/nouns dropped
     // from volunteer keywords so professional learners are not misrouted to the
-    // volunteer form. `serve` is a professional context verb — healthcare workers,
-    // social workers, and educators say "I serve seniors / patients / my community"
-    // to describe their JOB, not an offer to volunteer at The Plug AI. See #24.
+    // volunteer form.
+    //   #24 — `serve`: professional-context verb (healthcare/social-work/educators).
+    //   #26 — `help out`: motivational phrasal verb. "I want to learn AI so I can
+    //          help out my congregation" is a learning motivation, not an offer to
+    //          volunteer. Genuine volunteers still match volunteer/give back/donate time.
     keywords: [
       'volunteer', 'volunteering', 'give back', 'contribute time',
-      'help out', 'community service', 'donate time',
+      'community service', 'donate time',
       'support the community',
     ],
   },

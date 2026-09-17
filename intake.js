@@ -77,9 +77,14 @@ const SIGNALS = {
     //   #24 — `serve`: professional-context verb. Healthcare workers, social
     //          workers, and educators say "I serve seniors/patients/my community"
     //          to describe their JOB, not an intent to volunteer at The Plug AI.
+    //   #26 — `help out`: motivational phrasal verb. Faith-community and
+    //          neighborhood learners routinely say "I want to learn AI so I can
+    //          help out my congregation / neighbors / family" — that is a learning
+    //          motivation, not an offer to volunteer. Genuine volunteers still
+    //          match `volunteer`, `volunteering`, `give back`, or `donate time`.
     keywords: [
       'volunteer', 'volunteering', 'give back', 'contribute time',
-      'help out', 'community service', 'donate time',
+      'community service', 'donate time',
       'support the community',
     ],
     weight: 1.0,
