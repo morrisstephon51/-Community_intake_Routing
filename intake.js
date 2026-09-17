@@ -70,16 +70,17 @@ const SIGNALS = {
     weight: 1.0,
   },
   volunteer: {
-    // Service-seeking nouns (`mentor`, `mentoring`, `mentorship`, `teach`,
-    // `coach`) describe what a learner WANTS TO RECEIVE, not an offer to give
-    // time. "I need a mentor", "teach me AI", "looking for coaching" are clear
-    // learner intents -- matching them here misroutes those submitters to the
-    // volunteer form and they never get a welcome email. Dropped per #22;
-    // the remaining keywords are unambiguously offer-of-service signals.
+    // Context-describing verbs/nouns dropped from volunteer keywords so
+    // professional learners are not misrouted to the volunteer form:
+    //   #22 — `mentor`/`teach`/`coach`: service-SEEKING nouns a learner wants
+    //          to RECEIVE, not offer.
+    //   #24 — `serve`: professional-context verb. Healthcare workers, social
+    //          workers, and educators say "I serve seniors/patients/my community"
+    //          to describe their JOB, not an intent to volunteer at The Plug AI.
     keywords: [
       'volunteer', 'volunteering', 'give back', 'contribute time',
       'help out', 'community service', 'donate time',
-      'serve', 'support the community',
+      'support the community',
     ],
     weight: 1.0,
   },

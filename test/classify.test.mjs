@@ -4,6 +4,8 @@
 //   #7 how_heard attribution pollutes intent scoring → intent field only
 //   #9 single-keyword partner/volunteer downgraded to learner → evidence denominator
 //   #12 web path drops `reasoning` → return-shape parity between the two copies
+//   #22 service-seeking nouns misroute learners to volunteer inbox
+//   #24 professional-context verb `serve` misroutes job-describing learners to volunteer inbox
 // Runs the SAME cases against both the CLI module (intake.js) and the API
 // handler module (api/intake.js) so the two copies of classify() cannot drift.
 
@@ -39,6 +41,18 @@ for (const [impl, classify] of [['cli', classifyCli], ['api', classifyApi]]) {
   check('#22 "Teach me" does NOT misroute to volunteer', teachMe.label === 'learner', `got ${teachMe.label}`);
   const seekCoach = classify({ interest_description: "I'm looking for coaching on AI tools", how_heard: '' });
   check('#22 "looking for coaching" does NOT misroute to volunteer', seekCoach.label === 'learner', `got ${seekCoach.label}`);
+
+  // #24 — professional-context verb `serve` must not misroute job-describing
+  // learners to the volunteer inbox. Healthcare workers, social workers, and
+  // educators describe their roles with `serve`; they are NOT offering to
+  // volunteer at The Plug AI.
+  const serveHealthcare = classify({ interest_description: 'I serve seniors at a nursing home and want AI tools', how_heard: '' });
+  check('#24 "I serve seniors" (healthcare context) does NOT misroute to volunteer', serveHealthcare.label === 'learner', `got ${serveHealthcare.label}`);
+  const serveProfessional = classify({ interest_description: 'I serve my community through public health work and want to learn AI', how_heard: '' });
+  check('#24 "I serve my community" (professional context) does NOT misroute to volunteer', serveProfessional.label === 'learner', `got ${serveProfessional.label}`);
+  // ...but genuine volunteer intent still routes correctly via other signals.
+  const serveVolunteer = classify({ interest_description: 'I want to volunteer and serve the community', how_heard: '' });
+  check('#24 genuine volunteer with "volunteer" keyword still routes volunteer', serveVolunteer.label === 'volunteer', `got ${serveVolunteer.label}`);
 
   // #7 — how_heard is attribution, not intent; it must not drive the label.
   const heard = classify({ interest_description: 'I want to learn AI to grow my skills', how_heard: 'A company partner referred me' });
@@ -92,6 +106,7 @@ const parityCases = [
   'We want to invest and fund community programs',
   'I need a mentor to help me learn AI',
   'Teach me how to use AI for my church',
+  'I serve seniors at a nursing home and want AI tools',
 ];
 for (const desc of parityCases) {
   const a = classifyCli({ interest_description: desc, how_heard: '' });
