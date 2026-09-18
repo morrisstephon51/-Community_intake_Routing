@@ -29,9 +29,14 @@ const SIGNALS = {
     //   #30 — `support the community`: same class as #26/#28. Social workers,
     //          educators, and faith leaders use this phrase to describe their role
     //          or motivation — NOT an offer to volunteer.
+    //   #32 — `community service`: same class as #26/#28/#30. Faith leaders,
+    //          church workers, and community organizers describe their existing
+    //          programs as "community service" — an activity description, not an
+    //          offer to volunteer at The Plug AI. Genuine volunteers still match
+    //          `volunteer` or `volunteering`.
     keywords: [
       'volunteer', 'volunteering', 'contribute time',
-      'community service', 'donate time',
+      'donate time',
     ],
   },
 };

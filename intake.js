@@ -90,9 +90,15 @@ const SIGNALS = {
     //          describe their professional role or learning motivation — NOT an
     //          offer to volunteer. Genuine volunteers still match `volunteer`,
     //          `volunteering`, `contribute time`, or `donate time`.
+    //   #32 — `community service`: same class as #26/#28/#30. Faith leaders,
+    //          church workers, and community organizers routinely describe their
+    //          existing programs as "community service" (e.g. "our church community
+    //          service program", "I do community service at the food bank"). That
+    //          is an activity description, not an offer to volunteer at The Plug AI.
+    //          Genuine volunteers still match `volunteer` or `volunteering`.
     keywords: [
       'volunteer', 'volunteering', 'contribute time',
-      'community service', 'donate time',
+      'donate time',
     ],
     weight: 1.0,
   },

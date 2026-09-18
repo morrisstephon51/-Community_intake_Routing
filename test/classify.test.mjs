@@ -8,6 +8,7 @@
 //   #24 professional-context verb `serve` misroutes job-describing learners to volunteer inbox
 //   #28 motivational phrase `give back` misroutes learners who describe their goal as giving back
 //   #30 motivational phrase `support the community` misroutes learners who describe their professional role or learning goal
+//   #32 motivational phrase `community service` misroutes learners describing church/community programs
 // Runs the SAME cases against both the CLI module (intake.js) and the API
 // handler module (api/intake.js) so the two copies of classify() cannot drift.
 
@@ -92,6 +93,18 @@ for (const [impl, classify] of [['cli', classifyCli], ['api', classifyApi]]) {
   const supportVolunteer = classify({ interest_description: "I want to volunteer and support the community through The Plug AI", how_heard: '' });
   check('#30 genuine volunteer with "volunteer" keyword still routes volunteer', supportVolunteer.label === 'volunteer', `got ${supportVolunteer.label}`);
 
+  // #32 — motivational phrase `community service` must not misroute learners
+  // who describe their existing church/community programs.
+  const csChurch = classify({ interest_description: 'Our church community service program helps seniors and I want AI tools for it', how_heard: '' });
+  check('#32 "community service" (church program context) does NOT misroute to volunteer', csChurch.label === 'learner', `got ${csChurch.label}`);
+  const csPersonal = classify({ interest_description: 'I do community service at the food bank every weekend and want AI skills for my day job', how_heard: '' });
+  check('#32 "community service" (personal activity context) does NOT misroute to volunteer', csPersonal.label === 'learner', `got ${csPersonal.label}`);
+  const csYouth = classify({ interest_description: 'I coordinate community service for our youth group and AI tools would really help', how_heard: '' });
+  check('#32 "community service" (youth coordinator context) does NOT misroute to volunteer', csYouth.label === 'learner', `got ${csYouth.label}`);
+  // ...but a genuine volunteer with the `volunteer` keyword still routes correctly.
+  const csVolunteer = classify({ interest_description: 'I want to volunteer — I can offer community service hours to The Plug AI team', how_heard: '' });
+  check('#32 genuine volunteer with "volunteer" keyword still routes volunteer', csVolunteer.label === 'volunteer', `got ${csVolunteer.label}`);
+
   // #7 — how_heard is attribution, not intent; it must not drive the label.
   const heard = classify({ interest_description: 'I want to learn AI to grow my skills', how_heard: 'A company partner referred me' });
   check('#7 how_heard "company partner" ignored → learner', heard.label === 'learner', `got ${heard.label}`);
@@ -146,6 +159,7 @@ const parityCases = [
   'Teach me how to use AI for my church',
   'I serve seniors at a nursing home and want AI tools',
   'I want to learn AI so I can give back to my community',
+  'Our church community service program helps seniors and I want AI tools for it',
 ];
 for (const desc of parityCases) {
   const a = classifyCli({ interest_description: desc, how_heard: '' });
