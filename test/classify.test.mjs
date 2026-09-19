@@ -8,6 +8,7 @@
 //   #16 affiliation nouns organization/organisation misroute learners → dropped
 //   #18 discovery-context noun referral misroutes learners → dropped (refer clients kept)
 //   #20 financial-context nouns invest/investor/fund/funding misroute learners → dropped
+//   #34 collaborative-context nouns collaborate/collaboration misroute learners → dropped
 // Runs the SAME cases against both the CLI module (intake.js) and the API
 // handler module (api/intake.js) so the two copies of classify() cannot drift.
 
@@ -102,14 +103,14 @@ for (const [impl, classify] of [['cli', classifyCli], ['api', classifyApi]]) {
   check('#18 "caseworker gave me a referral" does NOT misroute a learner', caseWorkerReferral.label === 'learner', `got ${caseWorkerReferral.label}`);
   // ...but the PHRASE "refer clients" still routes a genuine partner.
   const referClientsPartner = classify({ interest_description: 'We refer clients to community programs and would love to partner and collaborate', how_heard: '' });
-  check('#18 real partner intent ("refer clients" + "collaborate") still routes partner', referClientsPartner.label === 'partner', `got ${referClientsPartner.label}`);
+  check('#18 real partner intent ("refer clients" + "partner") still routes partner', referClientsPartner.label === 'partner', `got ${referClientsPartner.label}`);
 
   // #20 — `invest`, `investor`, `fund`, `funding` are financial-context nouns,
   // not partnership-intent signals. For The Plug AI's faith-community /
   // community-org audience, "invest in my education" or "seeking funding for
   // AI training" is learner language. A single bare hit cleared the 0.7
   // threshold and misrouted those learners to the founder inbox (no welcome
-  // email). Genuine partners still match sponsor/sponsorship/collaborate/partner.
+  // email). Genuine partners still match sponsor/sponsorship/partner/refer clients.
   const investLearner = classify({ interest_description: 'I want to invest in my AI education and grow my skills', how_heard: '' });
   check('#20 "invest in my AI education" does NOT misroute a learner to partner', investLearner.label === 'learner', `got ${investLearner.label}`);
   const fundingLearner = classify({ interest_description: 'Our congregation is seeking funding for AI training programs and wants to learn', how_heard: '' });
@@ -118,7 +119,24 @@ for (const [impl, classify] of [['cli', classifyCli], ['api', classifyApi]]) {
   check('#20 "not an investor" phrasing does NOT misroute a learner to partner', investorLearner.label === 'learner', `got ${investorLearner.label}`);
   // ...but a genuine partner using real intent verbs still routes partner.
   const investSponsorPartner = classify({ interest_description: 'We would like to sponsor your program and collaborate on community events', how_heard: '' });
-  check('#20 real partner intent ("sponsor"/"collaborate") still routes partner', investSponsorPartner.label === 'partner', `got ${investSponsorPartner.label}`);
+  check('#20 real partner intent ("sponsor") still routes partner', investSponsorPartner.label === 'partner', `got ${investSponsorPartner.label}`);
+
+  // #34 — `collaborate`/`collaboration` are collaborative-context verbs/nouns,
+  // not partnership-intent signals. For The Plug AI's faith-community /
+  // community-org audience, "I want to collaborate with others to learn AI"
+  // or "our ministry is excited about AI collaboration" is learner language.
+  // A single bare hit cleared the 0.7 threshold and misrouted those learners
+  // to the founder inbox with no welcome email. Genuine partners still match
+  // sponsor/sponsorship/partner/refer clients.
+  const collaborateLearner = classify({ interest_description: 'I want to collaborate with like-minded learners in AI and grow my skills', how_heard: '' });
+  check('#34 "collaborate with...learners" does NOT misroute a learner to partner', collaborateLearner.label === 'learner', `got ${collaborateLearner.label}`);
+  const collaborationLearner = classify({ interest_description: 'Our ministry is excited about the collaboration between AI and faith-based education', how_heard: '' });
+  check('#34 "AI collaboration" in ministry context does NOT misroute a learner to partner', collaborationLearner.label === 'learner', `got ${collaborationLearner.label}`);
+  const collaborateWorkLearner = classify({ interest_description: 'I am hoping to collaborate with my coworkers on learning AI tools for our nonprofit', how_heard: '' });
+  check('#34 "collaborate with...coworkers" at nonprofit does NOT misroute a learner to partner', collaborateWorkLearner.label === 'learner', `got ${collaborateWorkLearner.label}`);
+  // ...but a genuine partner using real intent keywords still routes partner.
+  const sponsorReferPartner = classify({ interest_description: 'We would like to sponsor your program and refer clients from our network', how_heard: '' });
+  check('#34 real partner intent ("sponsor"/"refer clients") still routes partner', sponsorReferPartner.label === 'partner', `got ${sponsorReferPartner.label}`);
 
   // #12 — every classify() return must carry a non-empty `reasoning` string.
   // The web copy previously returned only { label, confidence }, so it wrote
