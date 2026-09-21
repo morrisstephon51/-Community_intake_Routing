@@ -91,5 +91,52 @@ for (const desc of parityCases) {
     `\n    cli=${JSON.stringify(a.reasoning)}\n    api=${JSON.stringify(b.reasoning)}`);
 }
 
+
+// ── Tower supersession suite (#14–#36) ────────────────────────────────────────
+// This consolidation replaces the flat keyword bag with intent-based signals and
+// supersedes the one-keyword-removal PR tower. Each case below is the learner
+// (or genuine-partner/volunteer) example from the issue it closes; every case
+// runs against BOTH classify() copies. Proving these green demonstrates the new
+// classifier is a behavioral SUPERSET of the entire #14–#36 chain.
+console.log('\n[supersede] #14–#36 tower cases (both impls)');
+
+const TOWER = [
+  // [issue, interest_description, expectedLabel]
+  ['#14 brand',        'I want to build my brand using AI for my small business', 'learner'],
+  ['#14 corporate',    'I work in a corporate role and want to learn AI', 'learner'],
+  ['#16 organization', "I'm with a community organization and want to learn AI", 'learner'],
+  ['#16 organisation', 'Our organisation members want to learn AI skills', 'learner'],
+  ['#18 referral',     'I heard about The Plug AI through a referral from my church and want to learn AI skills', 'learner'],
+  ['#20 invest',       'I want to invest in my AI education', 'learner'],
+  ['#20 funding',      'Our congregation seeks funding for AI training', 'learner'],
+  ['#22 mentor(seek)', 'I need a mentor to help me learn AI', 'learner'],
+  ['#22 teach(seek)',  'Teach me how to use AI for my church', 'learner'],
+  ['#22 coaching',     "I'm looking for coaching on AI", 'learner'],
+  ['#24 serve(job)',   'I serve seniors at a nursing home and want to learn AI', 'learner'],
+  ['#24 serve(work)',  'I serve my community through public health work and want AI skills', 'learner'],
+  ['#26 help out',     'I want to learn AI so I can help out my congregation', 'learner'],
+  ['#28 give back',    'I want to learn AI so I can give back to my community', 'learner'],
+  ['#30 support comm', 'I want to learn AI so I can better support the community I work with as a social worker', 'learner'],
+  ['#32 comm service', 'Our church runs a community service program and I want to learn AI', 'learner'],
+  ['#34 collaborate',  'I want to collaborate with like-minded learners in AI and grow my skills for my ministry', 'learner'],
+  ['#36 donate time',  'I donate time at our food pantry every week and want to learn how AI tools could help our ministry', 'learner'],
+  ['#36 contribute',   'I contribute time to my community organization and want to learn AI to do more good', 'learner'],
+  // Genuine partner/volunteer intent must STILL route (precision, not blanket suppression).
+  ['genuine sponsor',      'We would love to sponsor your programs', 'partner'],
+  ['genuine partnership',  'We are interested in a partnership with The Plug AI', 'partner'],
+  ['genuine partner with', 'We want to partner with you on a community program', 'partner'],
+  ['genuine refer clients','We refer clients regularly and want to work together', 'partner'],
+  ['genuine b2b',          'We offer a b2b AI platform and want to sponsor events', 'partner'],
+  ['genuine volunteer',    'I want to volunteer with The Plug AI', 'volunteer'],
+  ['genuine teach(offer)', 'I want to teach and mentor students in my community', 'volunteer'],
+];
+
+for (const [impl, classify] of [['cli', classifyCli], ['api', classifyApi]]) {
+  for (const [name, desc, expect] of TOWER) {
+    const r = classify({ interest_description: desc, how_heard: '' });
+    check(`[${impl}] ${name} → ${expect}`, r.label === expect, `got ${r.label} (conf ${r.confidence})`);
+  }
+}
+
 console.log(`\n${pass}/${pass + fail} passed`);
 if (fail > 0) process.exit(1);
