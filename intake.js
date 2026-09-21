@@ -81,7 +81,7 @@ const SIGNALS = {
     //          neighborhood learners routinely say "I want to learn AI so I can
     //          help out my congregation / neighbors / family" — that is a learning
     //          motivation, not an offer to volunteer. Genuine volunteers still
-    //          match `volunteer`, `volunteering`, `contribute time`, or `donate time`.
+    //          match `volunteer` or `volunteering`.
     //   #28 — `give back`: same class as #26. Learners say "I want to give back
     //          to my community" to describe their learning GOAL, not to offer
     //          to volunteer. Dropped for the same reason as `help out`.
@@ -96,9 +96,15 @@ const SIGNALS = {
     //          service program", "I do community service at the food bank"). That
     //          is an activity description, not an offer to volunteer at The Plug AI.
     //          Genuine volunteers still match `volunteer` or `volunteering`.
+    //   #36 — `donate time` / `contribute time`: same class as #26/#28/#30/#32.
+    //          "I donate time at our food pantry" or "I contribute time to my
+    //          community org" describes existing charitable activity elsewhere, not
+    //          an offer to volunteer at The Plug AI. A learner who describes their
+    //          service context to explain WHY they want AI skills is misrouted to
+    //          the volunteer inbox. Genuine volunteers still match `volunteer` or
+    //          `volunteering`.
     keywords: [
-      'volunteer', 'volunteering', 'contribute time',
-      'donate time',
+      'volunteer', 'volunteering',
     ],
     weight: 1.0,
   },

@@ -140,6 +140,23 @@ for (const [impl, classify] of [['cli', classifyCli], ['api', classifyApi]]) {
   // NULL reasoning to community_intake for every real submission.
   check('#12 reasoning present on a routed result', typeof sponsor.reasoning === 'string' && sponsor.reasoning.length > 0, `got ${JSON.stringify(sponsor.reasoning)}`);
   check('#12 reasoning present on the learner default', typeof bare.reasoning === 'string' && bare.reasoning.length > 0, `got ${JSON.stringify(bare.reasoning)}`);
+
+  // #36 — `donate time` and `contribute time` describe existing charitable
+  // activity elsewhere, not an offer to volunteer at The Plug AI. A learner
+  // who says "I donate time at our food pantry and want AI tools" is a learner
+  // seeking skills for their existing service work, not offering to volunteer
+  // at The Plug AI. Same class as #26/#28/#30/#32.
+  const donateTimeFoodPantry = classify({ interest_description: 'I donate time at our food pantry every week and want to learn how AI tools could help our ministry be more efficient', how_heard: '' });
+  check('#36 "donate time at our food pantry" does NOT misroute to volunteer', donateTimeFoodPantry.label === 'learner', `got ${donateTimeFoodPantry.label}`);
+  const donateTimeChurch = classify({ interest_description: "I've always donated time to our church outreach and want to learn AI so I can do more", how_heard: '' });
+  check('#36 "donated time to church outreach" (learner motivation) does NOT misroute to volunteer', donateTimeChurch.label === 'learner', `got ${donateTimeChurch.label}`);
+  const contributeTimeCommunity = classify({ interest_description: 'I contribute time to my community organization and want to learn AI to do more good', how_heard: '' });
+  check('#36 "contribute time to my community org" does NOT misroute to volunteer', contributeTimeCommunity.label !== 'volunteer', `got ${contributeTimeCommunity.label}`);
+  const contributeTimeCSR = classify({ interest_description: 'Our company is willing to contribute time to this initiative as part of our CSR program', how_heard: '' });
+  check('#36 "contribute time" (CSR context) does NOT misroute to volunteer', contributeTimeCSR.label !== 'volunteer', `got ${contributeTimeCSR.label}`);
+  // Genuine volunteers still route correctly via `volunteer`/`volunteering`.
+  const stillVolunteer = classify({ interest_description: 'I want to volunteer and donate my time to help The Plug AI grow', how_heard: '' });
+  check('#36 genuine volunteer with "volunteer" keyword still routes volunteer', stillVolunteer.label === 'volunteer', `got ${stillVolunteer.label}`);
 }
 
 // #12 — cross-impl reasoning parity. Both classify() copies write to the SAME

@@ -34,9 +34,15 @@ const SIGNALS = {
     //          programs as "community service" — an activity description, not an
     //          offer to volunteer at The Plug AI. Genuine volunteers still match
     //          `volunteer` or `volunteering`.
+    //   #36 — `donate time` / `contribute time`: same class as #26/#28/#30/#32.
+    //          "I donate time at our food pantry" or "I contribute time to my
+    //          community org" describes existing charitable activity elsewhere, not
+    //          an offer to volunteer at The Plug AI. A learner who describes their
+    //          service context to explain WHY they want AI skills is misrouted to
+    //          the volunteer inbox. Genuine volunteers still match `volunteer` or
+    //          `volunteering`.
     keywords: [
-      'volunteer', 'volunteering', 'contribute time',
-      'donate time',
+      'volunteer', 'volunteering',
     ],
   },
 };
