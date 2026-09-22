@@ -48,92 +48,105 @@ const FIXTURES = {
   },
 };
 
-// ── Classifier ────────────────────────────────────────────────────────────────
-// Weighted keyword scorer — no API cost. Returns same interface as a Claude API call.
+// ── Intent-based classifier (root-cause consolidation) ─────────────────────────
+// Supersedes the one-keyword-removal chain #14 #16 #18 #20 #22 #24 #26 #28 #30
+// #32 #34 #36. Root cause of that non-terminating PR tower: the prior design
+// scored a FLAT BAG of keywords, so any topic/affiliation/motivation/profession
+// word that merely describes the inquirer's OWN context (brand, corporate,
+// organization, referral, invest, fund/funding, collaborate, give back, help
+// out, serve, support the community, community service, donate/contribute time,
+// or a mentor/coach/tutor being *sought*) cleared the 0.7 threshold and misrouted
+// a clear learner — who then never received the welcome email (the learner path
+// is the only one that emits it). Keyword PRESENCE != intent. This classifier
+// routes partner/volunteer ONLY on a high-precision signal of intent to act
+// *toward The Plug AI*, and defaults everything else to learner.
+//
+// Kept byte-identical between intake.js and api/intake.js — both write the same
+// community_intake row, so classify() must not drift (parity-tested).
 
-const SIGNALS = {
-  partner: {
-    // Partner keywords are partnership-INTENT signals — an offer or request to
-    // work together — NOT first-person affiliation nouns. `business`, `company`,
-    // `enterprise`, and `agency` only describe the inquirer's own context: a
-    // learner ("I want to learn AI for my small business and grow my skills") is
-    // not a partner. They were dropped because a single incidental affiliation
-    // noun cleared the 0.7 threshold under #9's evidence denominator and misrouted
-    // clear learners to the founder inbox (they then never got a welcome email).
-    // Genuine partners still match sponsor/collaborate/partner/refer/invest.
-    keywords: [
-      'collaborate', 'collaboration', 'sponsor', 'sponsorship',
-      'organization', 'organisation', 'refer clients', 'referral', 'partner',
-      'partnership', 'brand', 'b2b', 'corporate', 'investor', 'invest',
-      'fund', 'funding',
-    ],
-    weight: 1.0,
-  },
-  volunteer: {
-    keywords: [
-      'volunteer', 'volunteering', 'give back', 'contribute time', 'mentor',
-      'mentoring', 'mentorship', 'help out', 'community service', 'donate time',
-      'serve', 'support the community', 'teach', 'coach',
-    ],
-    weight: 1.0,
-  },
-};
+// Strong signals: essentially only a genuine partner/volunteer writes these
+// about The Plug AI. A single hit routes.
+const PARTNER_SIGNALS = [
+  /\bsponsor(ship|ships|ing)?\b/,
+  /\bpartnership\b/,
+  /\bpartner(ing)?\s+with\b/,
+  /\brefer\s+clients\b/,
+  /\bb2b\b/,
+];
 
-function matchesKeyword(text, kw) {
-  // Whole-word/phrase match, NOT a bare substring, so short keywords
-  // (fund, invest, serve, teach) don't collide with innocent longer words
-  // (fundamentals, investigate, deserve/reserve, teacher) and misroute intake. See #3.
-  const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(`\\b${escaped}\\b`).test(text);
+const VOLUNTEER_SIGNALS = [
+  /\bvolunteer(ing|s)?\b/,
+];
+
+// teach / mentor / coach / tutor count as a volunteer signal ONLY when the
+// inquirer OFFERS to do them for others — never when they are the thing being
+// *sought*. "I want to teach and mentor students" → volunteer; "teach me",
+// "I need a mentor", "looking for coaching" → learner. This is what lets the
+// consolidation keep BOTH the genuine-offer case (#3) AND the seeking-learner
+// case (#22), which a flat delete of teach/mentor/coach could not.
+const VOLUNTEER_OFFER_VERB = /\b(teach|mentor|mentoring|tutor|coach)\b/;
+// A genuine OFFER to teach = an intent verb GOVERNING the teach verb ("want to
+// teach", "hoping to mentor", "willing to help coach"), OR the teach verb taking
+// a beneficiary object ("teach students", "mentor youth"). Tighter than the old
+// "any intent word anywhere in the text" gate: an educator who writes "I teach at
+// a public school and want to <learn/support>" is stating a profession — the
+// `want` governs a different verb — so it must fall back to learner (#30), while a
+// genuine "I want to teach and mentor students" (#3) still routes volunteer.
+const OFFER_TO_TEACH = /\b(want|wanting|wish|hope|hoping|like|love|willing|eager|ready|able|plan|planning|offer|offering|can|will|could|would)\s+(to\s+)?(help\s+)?(teach|mentor|tutor|coach)\b/;
+const TEACH_BENEFICIARY = /\b(teach|mentor|mentoring|tutor|tutoring|coach|coaching)\s+(and\s+\w+\s+)?(the\s+|our\s+|young\s+|local\s+|other\s+|my\s+)?(students?|kids?|children|youth|people|others|entrepreneurs?|members?|communities|folks|adults?|families|seniors?|women|men|girls?|boys?|learners?)\b/;
+const SEEKING = /\bteach\s+(me|us)\b|\b(need|needs|needing|want|wants|wanting|looking|look|seeking|seek|find|finding|get|getting|hire|hiring)\s+(a\s+|an\s+|some\s+|the\s+|for\s+a\s+|for\s+an\s+)?(mentor|mentors|coach|coaches|coaching|tutor|tutors|tutoring|mentoring|mentorship)\b|\b(a|an|my|the)\s+(mentor|coach|tutor)\b/;
+
+function matchSignals(text, patterns) {
+  const hits = [];
+  for (const re of patterns) {
+    const m = text.match(re);
+    if (m) hits.push(m[0].replace(/\s+/g, ' ').trim());
+  }
+  return hits;
+}
+
+function partnerHits(text) {
+  return matchSignals(text, PARTNER_SIGNALS);
+}
+
+function volunteerHits(text) {
+  const hits = matchSignals(text, VOLUNTEER_SIGNALS);
+  const verb = text.match(VOLUNTEER_OFFER_VERB);
+  if (verb && !SEEKING.test(text) && (OFFER_TO_TEACH.test(text) || TEACH_BENEFICIARY.test(text))) hits.push(verb[0]);
+  return hits;
 }
 
 function classify(payload) {
   // Classify on the intent field only. `how_heard` is marketing-attribution
   // metadata (e.g. "Instagram", "a brand partner referred me") — scoring it leaks
-  // the *source* into the *intent* and misroutes learners who heard about us
-  // through a partner/referral/company/agency. See #7.
+  // the *source* into the *intent* and misroutes learners. See #7.
   const text = (payload.interest_description || '').toLowerCase();
 
-  const scores = { learner: 0, partner: 0, volunteer: 0 };
+  const pHits = partnerHits(text);
+  const vHits = volunteerHits(text);
 
-  for (const [label, { keywords, weight }] of Object.entries(SIGNALS)) {
-    for (const kw of keywords) {
-      if (matchesKeyword(text, kw)) {
-        scores[label] += weight;
-      }
-    }
-  }
-
-  // Learner is the default; give it a baseline so it wins ties
-  scores.learner += 0.5;
+  // Learner is the default; its 0.5 baseline wins ties (no partner/volunteer
+  // evidence). Each matched signal is worth 1.
+  const scores = { learner: 0.5, partner: pHits.length, volunteer: vHits.length };
 
   const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
-
   const [topLabel, topScore] = sorted[0];
 
-  // Confidence combines two fixes:
-  //  • #5 — a signal-less learner default carries no evidence; its 0.5 baseline
-  //    is the only contribution to a total-denominator, so a ratio collapses to
-  //    ~1.0 and would misreport a pure fallback as near-certain. Report a
-  //    neutral 0.5 for the learner default instead.
-  //  • #9 — a genuine partner/volunteer winner is scored against matched-signal
-  //    evidence only (partner + volunteer), NOT the learner tie-breaking prior,
-  //    so a real single-keyword inquiry clears the 0.7 routing threshold instead
-  //    of being silently downgraded to the learner waitlist.
+  // #5 — a signal-less learner default carries no evidence; report a neutral 0.5
+  //      rather than a ratio that collapses to ~1.0 and looks near-certain.
+  // #9 — a genuine partner/volunteer winner is scored against matched-signal
+  //      evidence only, so a real single-signal inquiry clears the 0.7 threshold.
   const evidence = scores.partner + scores.volunteer;
   const confidence = topLabel === 'learner'
     ? 0.5
     : Math.min(topScore / evidence, 0.99);
 
-  const matchedKeywords = topLabel !== 'learner'
-    ? SIGNALS[topLabel].keywords.filter(kw => matchesKeyword(text, kw))
-    : [];
-
+  const matched = topLabel === 'partner' ? pHits : topLabel === 'volunteer' ? vHits : [];
   const reasoning = topLabel === 'learner'
     ? `No strong partner or volunteer signals found. Defaulting to learner (confidence: ${confidence.toFixed(2)}).`
-    : `Matched ${topLabel} keywords: [${matchedKeywords.join(', ')}]. Confidence: ${confidence.toFixed(2)}.`;
+    : `Matched ${topLabel} signals: [${matched.join(', ')}]. Confidence: ${confidence.toFixed(2)}.`;
 
-  // Hard fallback: if confidence below threshold, always learner
+  // Hard fallback: if confidence below threshold, always learner.
   if (confidence < 0.7 && topLabel !== 'learner') {
     return {
       label: 'learner',
