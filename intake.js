@@ -85,7 +85,15 @@ const VOLUNTEER_SIGNALS = [
 // consolidation keep BOTH the genuine-offer case (#3) AND the seeking-learner
 // case (#22), which a flat delete of teach/mentor/coach could not.
 const VOLUNTEER_OFFER_VERB = /\b(teach|mentor|mentoring|tutor|coach)\b/;
-const OFFER_INTENT = /\b(want|wanting|wish|hope|hoping|like|love|willing|eager|ready|able|plan|planning|offer|offering|can|will)\b/;
+// A genuine OFFER to teach = an intent verb GOVERNING the teach verb ("want to
+// teach", "hoping to mentor", "willing to help coach"), OR the teach verb taking
+// a beneficiary object ("teach students", "mentor youth"). Tighter than the old
+// "any intent word anywhere in the text" gate: an educator who writes "I teach at
+// a public school and want to <learn/support>" is stating a profession — the
+// `want` governs a different verb — so it must fall back to learner (#30), while a
+// genuine "I want to teach and mentor students" (#3) still routes volunteer.
+const OFFER_TO_TEACH = /\b(want|wanting|wish|hope|hoping|like|love|willing|eager|ready|able|plan|planning|offer|offering|can|will|could|would)\s+(to\s+)?(help\s+)?(teach|mentor|tutor|coach)\b/;
+const TEACH_BENEFICIARY = /\b(teach|mentor|mentoring|tutor|tutoring|coach|coaching)\s+(and\s+\w+\s+)?(the\s+|our\s+|young\s+|local\s+|other\s+|my\s+)?(students?|kids?|children|youth|people|others|entrepreneurs?|members?|communities|folks|adults?|families|seniors?|women|men|girls?|boys?|learners?)\b/;
 const SEEKING = /\bteach\s+(me|us)\b|\b(need|needs|needing|want|wants|wanting|looking|look|seeking|seek|find|finding|get|getting|hire|hiring)\s+(a\s+|an\s+|some\s+|the\s+|for\s+a\s+|for\s+an\s+)?(mentor|mentors|coach|coaches|coaching|tutor|tutors|tutoring|mentoring|mentorship)\b|\b(a|an|my|the)\s+(mentor|coach|tutor)\b/;
 
 function matchSignals(text, patterns) {
@@ -104,7 +112,7 @@ function partnerHits(text) {
 function volunteerHits(text) {
   const hits = matchSignals(text, VOLUNTEER_SIGNALS);
   const verb = text.match(VOLUNTEER_OFFER_VERB);
-  if (verb && OFFER_INTENT.test(text) && !SEEKING.test(text)) hits.push(verb[0]);
+  if (verb && !SEEKING.test(text) && (OFFER_TO_TEACH.test(text) || TEACH_BENEFICIARY.test(text))) hits.push(verb[0]);
   return hits;
 }
 
