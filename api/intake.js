@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { buildEmail } from '../lib/email.js';
 
 const SIGNALS = {
   partner: {
@@ -98,6 +99,25 @@ export default async function handler(req, res) {
   }
 
   const classification = classify(payload);
+
+  // #39 — compute the routing action for this submission, exactly as the CLI
+  // path (intake.js) does via buildEmail. The web path previously classified and
+  // logged but produced NO routing action, so every public-form submission was
+  // silently un-routed: partner inquiries never reached the founder, and
+  // learners/volunteers never got their welcome / volunteer-form email. Emit the
+  // SAME __GMAIL_ACTION__ envelope the CLI emits so the routing decision is
+  // computed and recorded per submission — recoverable from the function logs,
+  // matching this handler's existing recoverability contract for the no-Supabase
+  // case below — instead of dropped.
+  //
+  // This makes the routing action durable/auditable; it does NOT itself deliver
+  // mail from the serverless runtime. Actual delivery (a Resend/SendGrid call vs.
+  // a downstream poller that consumes these actions) and flipping the persisted
+  // `status` off 'routed' are the owner infra decisions tracked in #39; `status`
+  // is intentionally left unchanged here so this change cannot regress the insert.
+  const routing = buildEmail(classification.label, payload);
+  console.log('__GMAIL_ACTION__');
+  console.log(JSON.stringify({ action: 'send_email', ...routing }));
 
   // #12 — write the SAME column set as the CLI path (intake.js logToSupabase),
   // including `reasoning`. Previously the web path omitted it, so the founder
