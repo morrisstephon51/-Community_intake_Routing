@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node intake.js",
     "test": "npm run test:unit && npm run test:smoke",
-    "test:unit": "node test/classify.test.mjs",
+    "test:unit": "node test/classify.test.mjs && node test/routing.test.mjs",
     "test:smoke": "node intake.js --fixture learner && node intake.js --fixture partner && node intake.js --fixture volunteer"
   },
   "dependencies": {
