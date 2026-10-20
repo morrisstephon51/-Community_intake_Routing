@@ -126,6 +126,7 @@ const TOWER = [
   ['genuine partnership',  'We are interested in a partnership with The Plug AI', 'partner'],
   ['genuine partner with', 'We want to partner with you on a community program', 'partner'],
   ['genuine refer clients','We refer clients regularly and want to work together', 'partner'],
+  ['#41 b2b context',      'I manage B2B client relationships and want to learn AI tools to automate my prospecting', 'learner'],
   ['genuine b2b',          'We offer a b2b AI platform and want to sponsor events', 'partner'],
   ['genuine volunteer',    'I want to volunteer with The Plug AI', 'volunteer'],
   ['genuine teach(offer)', 'I want to teach and mentor students in my community', 'volunteer'],

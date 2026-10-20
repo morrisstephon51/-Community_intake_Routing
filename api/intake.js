@@ -23,7 +23,6 @@ const PARTNER_SIGNALS = [
   /\bpartnership\b/,
   /\bpartner(ing)?\s+with\b/,
   /\brefer\s+clients\b/,
-  /\bb2b\b/,
 ];
 
 const VOLUNTEER_SIGNALS = [
